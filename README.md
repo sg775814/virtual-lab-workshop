@@ -1,7 +1,7 @@
 ## Introduction
 
 
-<b>Discipline | <b>Fill your discipline name here
+<b>Discipline | <b>Shivam Gupta
 :--|:--|
 <b> Lab | <b> Virtual lab
 <b> Experiment|     <b> Simulate the change in light intensity measured by the photodetctor as a polarizer is rotated.
