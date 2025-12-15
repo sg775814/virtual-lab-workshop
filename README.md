@@ -14,7 +14,7 @@ Fill a brief description of this experiment here
 :--|:--|
 <b>Institute name: |<b> Rajkiya engineering college Banda  
 <b> Email id:| <b> sg775814@gmail.com  
-<b> Department:Information Technology |  
+<b> Department:|<b>Information Technology |  
 
 ### Contributors List
 
