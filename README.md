@@ -13,7 +13,7 @@ Fill a brief description of this experiment here
 <b>Name of Developer | <b> Shivam Gupta
 :--|:--|
 <b>Institute name: <b> Rajkiya engineering college Banda  
-<b> Email id:<b> sg775814@gmail.com  
+<b> Email id: <b> sg775814@gmail.com  
 <b> Department:Information Technology |  
 
 ### Contributors List
