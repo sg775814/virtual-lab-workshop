@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>VR Polarization Simulator (Malus's Law)</title>
+    <script src="https://aframe.io/releases/1.4.0/aframe.min.js"></script>
+    <style>
+      /* GUI Overlay Styles */
+      #controls {
+        position: absolute;
+        bottom: 20px;
+        left: 20px;
+        background: rgba(0, 0, 0, 0.8);
+        color: white;
+        padding: 20px;
+        border-radius: 10px;
+        font-family: Arial, sans-serif;
+        z-index: 999;
+        width: 300px;
+      }
+      input[type=range] {
+        width: 100%;
+      }
+      .data-row {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 5px;
+      }
+      .title {
+        font-weight: bold;
+        text-align: center;
+        margin-bottom: 10px;
+        color: #4CC3D9;
+      }
+    </style>
+  </head>
+  <body>
+
+    <!-- 2D Overlay UI for Input -->
+    <div id="controls">
+      <div class="title">EXPERIMENT CONTROLS</div>
+      
+      <label for="angle">Polarizer Angle (θ): <span id="angleVal">0</span>°</label>
+      <input type="range" id="angle" min="0" max="360" value="0">
+      
+      <hr style="border-color: #555;">
+      
+      <div class="title">DATA OUTPUT</div>
+      <div class="data-row">
+        <span>Incident Intensity (I₀):</span>
+        <span>100%</span>
+      </div>
+      <div class="data-row">
+        <span>Calculation (cos²θ):</span>
+        <span id="calcVal">1.00</span>
+      </div>
+      <div class="data-row">
+        <span style="color: #ffcc00; font-weight:bold;">Detected Intensity (I):</span>
+        <span id="intensityVal" style="color: #ffcc00; font-weight:bold;">100%</span>
+      </div>
+    </div>
+
+    <!-- 3D VR Scene -->
+    <a-scene background="color: #111">
+      
+      <!-- Textures (Generated via Canvas/SVG logic for standalone file) -->
+      <a-assets>
+        <!-- Grid pattern for the Polarizer lens to visualize axis -->
+        <img id="grid-tex" src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxMDAiIGhlaWdodD0iMTAwIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSJyd2hhKDAsMCwwLDAuMSkiLz48bGluZSB4MT0iNTAiIHkxPSIwIiB4Mj0iNTAiIHkyPSIxMDAiIHN0cm9rZT0id2hpdGUiIHN0cm9rZS13aWR0aD0iMiIvPjwvc3ZnPg==">
+      </a-assets>
+
+      <!-- CAMERA / USER -->
+      <a-entity position="2 1.6 4" rotation="0 25 0">
+        <a-camera look-controls wasd-controls></a-camera>
+      </a-entity>
+
+      <!-- OPTICAL BENCH (The Table) -->
+      <a-box position="0 0 0" width="10" height="0.1" depth="2" color="#333"></a-box>
+      <a-box position="0 -0.5 0" width="10" height="1" depth="0.5" color="#222"></a-box>
+
+      <!-- 1. LIGHT SOURCE (Laser) -->
+      <a-entity position="-3.5 1 0">
+        <a-cylinder rotation="0 0 90" height="1" radius="0.2" color="#444"></a-cylinder>
+        <a-sphere position="0.5 0 0" radius="0.15" color="#ff0000" emissive="#ff0000" emissive-intensity="2"></a-sphere>
+        <!-- Label -->
+        <a-text value="Laser Source" position="0 0.5 0" align="center" side="double"></a-text>
+      </a-entity>
+
+      <!-- BEAM SEGMENT 1 (Source to Polarizer 1) -->
+      <!-- Unpolarized light (represented as solid red) -->
+      <a-cylinder position="-2 1 0" rotation="0 0 90" height="3" radius="0.02" 
+                  color="red" opacity="0.4"></a-cylinder>
+
+      <!-- 2. FIRST POLARIZER (Fixed Vertical) -->
+      <a-entity position="-0.5 1 0">
+        <!-- Mount -->
+        <a-cylinder position="0 -0.5 0" height="1" radius="0.05" color="silver"></a-cylinder>
+        <!-- Lens Frame -->
+        <a-ring radius-inner="0.45" radius-outer="0.5" color="gray"></a-ring>
+        <!-- The Lens (Vertical Axis) -->
+        <a-circle radius="0.45" material="src: #grid-tex; opacity: 0.5; transparent: true; side: double"></a-circle>
+        <!-- Axis Indicator -->
+        <a-box width="0.02" height="0.9" depth="0.02" color="white"></a-box>
+        <a-text value="Polarizer\n(Fixed Vertical)" position="0 0.8 0" align="center" scale="0.8 0.8 0.8"></a-text>
+      </a-entity>
+
+      <!-- BEAM SEGMENT 2 (Between Polarizers) -->
+      <!-- Linearly polarized light (max intensity initially) -->
+      <a-cylinder position="1 1 0" rotation="0 0 90" height="3" radius="0.02" 
+                  color="red" opacity="0.8"></a-cylinder>
+
+      <!-- 3. SECOND POLARIZER (Analyzer - Rotatable) -->
+      <a-entity id="analyzer-mount" position="2.5 1 0">
+        <!-- Mount base (static) -->
+        <a-cylinder position="0 -0.5 0" height="1" radius="0.05" color="silver"></a-cylinder>
+        <a-text value="Analyzer\n(Rotatable)" position="0 0.8 0" align="center" scale="0.8 0.8 0.8"></a-text>
+        
+        <!-- Rotating part -->
+        <a-entity id="analyzer-lens">
+            <a-ring radius-inner="0.45" radius-outer="0.5" color="gold"></a-ring>
+            <!-- The Lens (Axis rotates) -->
+            <a-circle radius="0.45" material="src: #grid-tex; opacity: 0.5; transparent: true; side: double"></a-circle>
+            <!-- Axis Indicator -->
+            <a-box width="0.02" height="0.9" depth="0.02" color="yellow"></a-box>
+        </a-entity>
+      </a-entity>
+
+      <!-- BEAM SEGMENT 3 (Analyzer to Detector) -->
+      <!-- Intensity varies here -->
+      <a-cylinder id="output-beam" position="3.5 1 0" rotation="0 0 90" height="2" radius="0.02" 
+                  color="red" opacity="1"></a-cylinder>
+
+      <!-- 4. PHOTODETECTOR -->
+      <a-entity position="4.5 1 0">
+        <a-box depth="0.2" height="0.5" width="0.5" color="#333"></a-box>
+        <!-- Screen that glows -->
+        <a-plane id="detector-screen" position="-0.11 0 0" rotation="0 -90 0" width="0.4" height="0.4" 
+                 color="#000" emissive="#ff0000" emissive-intensity="1"></a-plane>
+        <a-text value="Photodetector" position="0 0.5 0" align="center" side="double"></a-text>
+      </a-entity>
+
+      <!-- Lighting -->
+      <a-light type="ambient" intensity="0.5"></a-light>
+      <a-light type="point" position="2 4 2" intensity="0.8"></a-light>
+
+    </a-scene>
+
+    <script>
+      // 1. Select DOM elements
+      const slider = document.getElementById('angle');
+      const angleText = document.getElementById('angleVal');
+      const calcText = document.getElementById('calcVal');
+      const intensityText = document.getElementById('intensityVal');
+      
+      // 3D Objects
+      const analyzerLens = document.getElementById('analyzer-lens');
+      const outputBeam = document.getElementById('output-beam');
+      const detectorScreen = document.getElementById('detector-screen');
+
+      // 2. Physics Simulation Function (Malus's Law)
+      function updatePhysics() {
+        // Get Input
+        let degrees = slider.value;
+        let radians = degrees * (Math.PI / 180);
+
+        // Calculate Malus's Law: I = I0 * cos^2(theta)
+        // Note: In this sim, Input Beam (Beam 2) is already polarized vertically.
+        // If Analyzer is 0 deg (Vertical), transmission is 100%.
+        // If Analyzer is 90 deg (Horizontal), transmission is 0%.
+        
+        let cosTheta = Math.cos(radians);
+        let intensity = cosTheta * cosTheta; // Result is 0.0 to 1.0
+
+        // Update UI Text
+        angleText.innerText = degrees;
+        calcText.innerText = intensity.toFixed(3);
+        intensityText.innerText = Math.round(intensity * 100) + "%";
+
+        // Update 3D Model Visuals
+        
+        // A. Rotate the Analyzer Lens
+        // Note: In A-Frame rotation is (x, y, z). We rotate around Z axis for the lens face.
+        analyzerLens.setAttribute('rotation', `0 0 ${-degrees}`);
+
+        // B. Change Beam Opacity (Simulate laser fading)
+        // Start at 0.1 min visibility so we can still see where the beam "would" be
+        let beamOpacity = (intensity * 0.9) + 0.1; 
+        outputBeam.setAttribute('opacity', beamOpacity);
+
+        // C. Change Detector Glow (Emissive Intensity)
+        detectorScreen.setAttribute('emissive-intensity', intensity * 2); 
+        // Also dim the color slightly for realism
+        let colorVal = Math.floor(intensity * 255);
+        // We keep it red, but fade to black
+        // detectorScreen.setAttribute('color', `rgb(${colorVal}, 0, 0)`);
+      }
+
+      // 3. Event Listeners
+      slider.addEventListener('input', updatePhysics);
+
+      // Initialize
+      updatePhysics();
+    </script>
+  </body>
+</html>
